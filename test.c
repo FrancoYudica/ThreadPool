@@ -24,16 +24,18 @@ int main()
 	char buffer[32];
 	for (int i = 0; i < 20; i++)
 	{
-		thread_pool_add_task(&thread_pool, &increment_number, NULL);
+		thread_pool_submit(&thread_pool, &increment_number, NULL);
 	}
 
 	sleep(1);
 
-	while(thread_pool_has_remaining_tasks(&thread_pool))
-	{
-		printf("Didn't finish yet...\n");
-		sleep(1);
-	}
+	thread_pool_wait_tasks(&thread_pool);
+
+	//while(thread_pool_has_remaining_tasks(&thread_pool))
+	//{
+	//	printf("Didn't finish yet...\n");
+	//	sleep(1);
+	//}
 
 	thread_pool_destroy(&thread_pool);
 	return EXIT_SUCCESS;

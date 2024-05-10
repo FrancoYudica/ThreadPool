@@ -23,7 +23,11 @@ typedef struct
 	/// @brief Mutex used to modify the amount of currenlty working theads
 	pthread_mutex_t working_threads_mutex;
 
+	/// @brief Condition used to signal when a new task is added
 	pthread_cond_t thread_task_cond;
+
+	/// @brief Condition signaled when all tasks are completed
+	pthread_cond_t cond_all_tasks_done;
 
 	/// @brief Queue that holds tasks
 	task_queue_t queue;
@@ -55,6 +59,7 @@ void thread_pool_init(thread_pool_t* pool, int size)
 
 	// Initializes condition
 	pthread_cond_init(&pool->thread_task_cond, NULL);
+	pthread_cond_init(&pool->cond_all_tasks_done, NULL);
 	pthread_mutex_init(&pool->queue_mutex, NULL);
 	pthread_mutex_init(&pool->working_threads_mutex, NULL);
 
@@ -65,7 +70,8 @@ void thread_pool_init(thread_pool_t* pool, int size)
 		pthread_create(&pool->threads[i], NULL, __thread_task, pool);
 }
 
-void thread_pool_add_task(thread_pool_t* pool, thread_task_t task, task_arg_t arg)
+/// @brief Submits a task to the thread pool. If possible, the task will be inmediately executed
+void thread_pool_submit(thread_pool_t* pool, thread_task_t task, task_arg_t arg)
 {
 	// Pushes task with argument. 
 	// Avoid race condition with mutex
@@ -94,14 +100,22 @@ void thread_pool_destroy(thread_pool_t* pool)
 	pthread_mutex_destroy(&pool->queue_mutex);
 	pthread_mutex_destroy(&pool->working_threads_mutex);
 	pthread_cond_destroy(&pool->thread_task_cond);
+	pthread_cond_destroy(&pool->cond_all_tasks_done);
 
 	THREAD_POOL_LOG("Thread pool destroyed!\n", pthread_self());
-
 }
 
 int thread_pool_has_remaining_tasks(thread_pool_t* pool)
 {
 	return pool->working_threads > 0;
+}
+
+/// @brief Blocks current thread until all tasks are completed
+void thread_pool_wait_tasks(thread_pool_t* pool)
+{
+	pthread_mutex_lock(&pool->working_threads_mutex);
+	pthread_cond_wait(&pool->cond_all_tasks_done, &pool->working_threads_mutex);
+	pthread_mutex_unlock(&pool->working_threads_mutex);
 }
 
 /// @brief Executed by thead, wait for condition to pop next task
@@ -147,6 +161,11 @@ void* __thread_task(void* arg)
 		// Updates the amount of working threads
 		pthread_mutex_lock(&pool->working_threads_mutex);
 		pool->working_threads--;
+
+		if (pool->working_threads == 0 && pool->queue.size == 0)
+		{
+			pthread_cond_broadcast(&pool->cond_all_tasks_done);
+		}
 		pthread_mutex_unlock(&pool->working_threads_mutex);
 
 	}
