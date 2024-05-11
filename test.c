@@ -15,28 +15,21 @@ void increment_number(void* arg)
 int main()
 {
 
-	thread_pool_t thread_pool;
 
 	printf("Creating pool\n");
 
-	thread_pool_init(&thread_pool, 8);
+	thpool_t* thread_pool = thpool_init(8);
 	printf("Initialized\n");
 	char buffer[32];
 	for (int i = 0; i < 20; i++)
 	{
-		thread_pool_submit(&thread_pool, &increment_number, NULL);
+		thpool_submit(thread_pool, &increment_number, NULL);
 	}
 
 	sleep(1);
 
-	thread_pool_wait_tasks(&thread_pool);
+	thpool_wait_tasks(thread_pool);
 
-	//while(thread_pool_has_remaining_tasks(&thread_pool))
-	//{
-	//	printf("Didn't finish yet...\n");
-	//	sleep(1);
-	//}
-
-	thread_pool_destroy(&thread_pool);
+	thpool_destroy(thread_pool);
 	return EXIT_SUCCESS;
 }
