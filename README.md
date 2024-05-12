@@ -27,4 +27,4 @@ This project implements a thread pool in C, providing a flexible and efficient w
 2. Navigate to the project directory.
 3. Compile the project using your preferred C compiler. For example:
    ```bash
-   gcc -o test test.c thread_pool.c task_queue.c -pthread
+   gcc -o test test.c thread_pool.c task_queue.c -D THPOOL_DEBUG -pthread

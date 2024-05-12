@@ -7,27 +7,21 @@
 
 void increment_number(void* arg)
 {
-	static int n = 0;
-	sleep(3);
-	printf("Awake! number: %d\n", n++);
+	char* character = (char*)arg;
+	printf("Thread %ld solving task... Character: %c\n", pthread_self(), *character);
 }
 
 int main()
 {
-
-
-	printf("Creating pool\n");
-
 	thpool_t* thread_pool = thpool_init(8);
-	printf("Initialized\n");
-	char buffer[32];
-	for (int i = 0; i < 20; i++)
+
+	char message[] = "This is a THPOOL test!";
+	for (int i = 0; i < strlen(message); i++)
 	{
-		thpool_submit(thread_pool, &increment_number, NULL);
+		thpool_submit(thread_pool, &increment_number, &message[i]);
 	}
 
-	sleep(1);
-
+	printf("Waiting tasks to finish...\n");
 	thpool_wait_tasks(thread_pool);
 
 	thpool_destroy(thread_pool);

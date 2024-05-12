@@ -8,7 +8,7 @@ void* __thread_task(void* arg)
 {
 	thpool_t* pool = (thpool_t*)arg;
 
-	THREAD_POOL_LOG("Starting thread %ld\n", pthread_self());
+	THREAD_POOL_LOG("THPOOL: Starting thread %ld\n", pthread_self());
 	while(1)
 	{
 		// Locks, since one thread at the time should be able to
@@ -23,11 +23,11 @@ void* __thread_task(void* arg)
 
 		if (pool->shutdown)
 		{
-			THREAD_POOL_LOG("Thread %ld exiting\n", pthread_self());
+			THREAD_POOL_LOG("THPOOL: Thread %ld exiting\n", pthread_self());
 			pthread_mutex_unlock(&pool->queue_mutex);
 			pthread_exit(NULL);
 		}
-		THREAD_POOL_LOG("Thread %ld handling the condition\n", pthread_self());
+		// THREAD_POOL_LOG("Thread %ld handling the condition\n", pthread_self());
 
 		// Updates the amount of working threads
 		pthread_mutex_lock(&pool->working_threads_mutex);
@@ -49,6 +49,7 @@ void* __thread_task(void* arg)
 
 		if (pool->working_threads == 0 && pool->queue.size == 0)
 		{
+			printf("THPOOL: All threads finished!\n");
 			pthread_cond_broadcast(&pool->cond_all_tasks_done);
 		}
 		pthread_mutex_unlock(&pool->working_threads_mutex);
@@ -62,6 +63,7 @@ void* __thread_task(void* arg)
 /// @brief Initializes thread pool, with a fixed amount of threads
 thpool_t* thpool_init(int size)
 {
+	THREAD_POOL_LOG("Initializing thread pool if size %d\n", size);
     thpool_t* pool = (thpool_t*)malloc(sizeof(thpool_t));
 	// Sets pool size and threads array
 	pool->size = size;
@@ -119,7 +121,7 @@ void thpool_destroy(thpool_t* pool)
 
     free(pool);
 
-	THREAD_POOL_LOG("Thread pool destroyed!\n");
+	THREAD_POOL_LOG("THPOOL: Thread pool destroyed!\n");
 }
 
 int thpool_num_threads_working(thpool_t* pool)
@@ -131,7 +133,12 @@ int thpool_num_threads_working(thpool_t* pool)
 void thpool_wait_tasks(thpool_t* pool)
 {
 	pthread_mutex_lock(&pool->working_threads_mutex);
-	pthread_cond_wait(&pool->cond_all_tasks_done, &pool->working_threads_mutex);
+
+	// Only waits if there are remaining tasks
+	if (pool->queue.size > 0)
+	{
+		pthread_cond_wait(&pool->cond_all_tasks_done, &pool->working_threads_mutex);
+	}
 	pthread_mutex_unlock(&pool->working_threads_mutex);
 }
 

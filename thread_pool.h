@@ -4,9 +4,7 @@
 #include <string.h>
 #include "task_queue.h"
 
-#define THREAD_POOL_DEBUG
-
-#ifdef THREAD_POOL_DEBUG
+#ifdef THPOOL_DEBUG
 #define THREAD_POOL_LOG(...) printf(__VA_ARGS__);
 
 #else
