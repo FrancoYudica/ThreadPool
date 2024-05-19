@@ -26,7 +26,7 @@ typedef struct
 	pthread_cond_t cond_all_tasks_done;
 
 	/// @brief Queue that holds tasks
-	task_queue_t queue;
+	task_queue_t* queue;
 
 	///@brief Maximum amount of concurrent threads
 	int size;

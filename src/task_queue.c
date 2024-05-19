@@ -1,19 +1,35 @@
 #include "task_queue.h"
 #include <stdlib.h>
 
-
-void task_queue_init(task_queue_t* queue)
+struct queue_node_t
 {
+	struct queue_node_t* next;
+	thread_task_t task;
+	task_arg_t arg;
+};
+
+struct task_queue_t
+{
+	struct queue_node_t* head;
+	struct queue_node_t* tail;
+	int size;
+};
+
+
+task_queue_t* task_queue_create()
+{
+	task_queue_t* queue = (task_queue_t*)malloc(sizeof(task_queue_t));
 	queue->size = 0;
 	queue->head = NULL;
 	queue->tail = NULL;
+	return queue;
 }
 
 /// @brief Pushes task into task_queue_t
 void task_queue_push_task(task_queue_t* queue, thread_task_t task, task_arg_t arg)
 {
 	// Creates next node that stores the task
-	struct __queue_node_t* next_node = (struct __queue_node_t*)malloc(sizeof(struct __queue_node_t));
+	struct queue_node_t* next_node = (struct queue_node_t*)malloc(sizeof(struct queue_node_t));
 	
 	// Sets task
 	next_node->task = task;
@@ -41,7 +57,7 @@ void task_queue_push_task(task_queue_t* queue, thread_task_t task, task_arg_t ar
 void task_queue_pop_task(task_queue_t* queue, thread_task_t* task, task_arg_t* arg)
 {
 	// Access top node
-	struct __queue_node_t* top_node = queue->head;
+	struct queue_node_t* top_node = queue->head;
 
 	// Gets task and argument
 	*task = top_node->task;
@@ -55,13 +71,20 @@ void task_queue_pop_task(task_queue_t* queue, thread_task_t* task, task_arg_t* a
 	queue->size--;
 }
 
-void task_queue_clear(task_queue_t* queue)
+void task_queue_destroy(task_queue_t *queue)
 {
-	struct __queue_node_t* current = queue->head;
+
+	struct queue_node_t* current = queue->head;
 	while(current != NULL)
 	{
-		struct __queue_node_t* next = current->next;
+		struct queue_node_t* next = current->next;
 		free(current);
 		current = next;
 	}
+	free(queue);
+}
+
+bool task_queue_is_empty(task_queue_t *queue)
+{
+	return queue->head == NULL;
 }

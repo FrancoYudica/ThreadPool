@@ -16,7 +16,7 @@ void* __thread_task(void* arg)
 		pthread_mutex_lock(&pool->queue_mutex);
 
 		// Waits for condition, if there isn't any
-		while(pool->queue.size == 0 && !pool->shutdown)
+		while(task_queue_is_empty(pool->queue) && !pool->shutdown)
 		{
 			pthread_cond_wait(&pool->thread_task_cond, &pool->queue_mutex);
 		}
@@ -37,7 +37,7 @@ void* __thread_task(void* arg)
 		// Pops task of the queue
 		thread_task_t task;
 		task_arg_t arg;
-		task_queue_pop_task(&pool->queue, &task, &arg);
+		task_queue_pop_task(pool->queue, &task, &arg);
 		pthread_mutex_unlock(&pool->queue_mutex);
 
 		// Executes task
@@ -47,7 +47,7 @@ void* __thread_task(void* arg)
 		pthread_mutex_lock(&pool->working_threads_mutex);
 		pool->working_threads--;
 
-		if (pool->working_threads == 0 && pool->queue.size == 0)
+		if (pool->working_threads == 0 && task_queue_is_empty(pool->queue))
 		{
 			printf("THPOOL: All threads finished!\n");
 			pthread_cond_broadcast(&pool->cond_all_tasks_done);
@@ -78,7 +78,7 @@ thpool_t* thpool_init(int size)
 	pthread_mutex_init(&pool->queue_mutex, NULL);
 	pthread_mutex_init(&pool->working_threads_mutex, NULL);
 
-	task_queue_init(&pool->queue);
+	pool->queue = task_queue_create();
 
 	// Creates all threads
 	for (int i = 0; i < size; i++)
@@ -93,7 +93,7 @@ void thpool_submit(thpool_t* pool, thread_task_t task, task_arg_t arg)
 	// Pushes task with argument. 
 	// Avoid race condition with mutex
 	pthread_mutex_lock(&pool->queue_mutex);
-	task_queue_push_task(&pool->queue, task, arg);
+	task_queue_push_task(pool->queue, task, arg);
 	pthread_mutex_unlock(&pool->queue_mutex);
 
 	pthread_cond_signal(&pool->thread_task_cond);
@@ -113,7 +113,7 @@ void thpool_destroy(thpool_t* pool)
 	for (int i = 0; i < pool->size; i++)
 		pthread_join(pool->threads[i], NULL);
 
-	task_queue_clear(&pool->queue);
+	task_queue_destroy(pool->queue);
 	pthread_mutex_destroy(&pool->queue_mutex);
 	pthread_mutex_destroy(&pool->working_threads_mutex);
 	pthread_cond_destroy(&pool->thread_task_cond);
@@ -135,7 +135,7 @@ void thpool_wait_tasks(thpool_t* pool)
 	pthread_mutex_lock(&pool->working_threads_mutex);
 
 	// Only waits if there are remaining tasks
-	if (pool->queue.size > 0)
+	if (!task_queue_is_empty(pool->queue))
 	{
 		pthread_cond_wait(&pool->cond_all_tasks_done, &pool->working_threads_mutex);
 	}
