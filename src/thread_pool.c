@@ -49,7 +49,7 @@ void* __thread_task(void* arg)
 
 		if (pool->working_threads == 0 && task_queue_is_empty(pool->queue))
 		{
-			printf("THPOOL: All threads finished!\n");
+			THREAD_POOL_LOG("THPOOL: All threads finished!\n");
 			pthread_cond_broadcast(&pool->cond_all_tasks_done);
 		}
 		pthread_mutex_unlock(&pool->working_threads_mutex);
@@ -60,8 +60,8 @@ void* __thread_task(void* arg)
 }
 
 
-/// @brief Initializes thread pool, with a fixed amount of threads
-thpool_t* thpool_init(int size)
+/// @brief Creates thread pool, with a fixed amount of threads
+thpool_t* thpool_create(int size)
 {
 	THREAD_POOL_LOG("Initializing thread pool if size %d\n", size);
     thpool_t* pool = (thpool_t*)malloc(sizeof(thpool_t));

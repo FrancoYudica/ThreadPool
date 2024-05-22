@@ -42,8 +42,8 @@ typedef struct
 } thpool_t;
 
 
-/// @brief Initializes thread pool, with a fixed amount of threads
-thpool_t* thpool_init(int size);
+/// @brief Creates thread pool, with a fixed amount of threads
+thpool_t* thpool_create(int size);
 
 /// @brief Submits a task to the thread pool. If possible, the task will be inmediately executed
 void thpool_submit(thpool_t* pool, thread_task_t task, task_arg_t arg);
