@@ -87,7 +87,7 @@ thpool_t* thpool_create(int size)
     return pool;
 }
 
-/// @brief Submits a task to the thread pool. If possible, the task will be inmediately executed
+/// @brief Submits a task to the thread pool. If possible, the task will be immediately executed
 void thpool_submit(thpool_t* pool, thread_task_t task, task_arg_t arg)
 {
 	// Pushes task with argument. 
