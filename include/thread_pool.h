@@ -57,4 +57,6 @@ int thpool_num_threads_working(thpool_t* pool);
 /// @brief Blocks current thread until all tasks are completed
 void thpool_wait_tasks(thpool_t* pool);
 
+int thpool_all_threads_busy(thpool_t* pool);
+
 #endif
